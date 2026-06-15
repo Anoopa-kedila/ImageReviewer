@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="ImageReviewerApp.Tests/ImageReviewerApp.Tests.csproj" />
-  <Project Path="ImageReviewerApp/ImageReviewerApp.csproj" />
-</Solution>
