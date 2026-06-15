@@ -14,6 +14,9 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <StartupObject>ImageReviewerApp.App</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <UseWindowsForms>false</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>

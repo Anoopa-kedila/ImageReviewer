@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ImageReviewerApp": {
+      "commandName": "Project",
+      "workingDirectory": "$(ProjectDir)bin"
+    }
+  }
+}
