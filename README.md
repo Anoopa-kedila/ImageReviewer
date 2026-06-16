@@ -35,6 +35,14 @@ A Windows desktop application for processing 16-bit grayscale TIFF medical and s
 **MVVM Pattern** with Dependency Injection  
 **Design Patterns:** Strategy, Factory, Async/Await
 
+📐 **Detailed Architecture Documentation:** See [ARCHITECTURE.md](ARCHITECTURE.md) for:
+- High-Level Design (HLD)
+- Low-Level Design (LLD)
+- Class Diagrams
+- Sequence Diagrams
+- Component Architecture
+- Data Flow Diagrams
+
 
 ## Build & Run
 
