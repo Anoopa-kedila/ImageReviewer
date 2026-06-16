@@ -251,7 +251,7 @@ This makes it easy to add new operations without changing existing code.
 
 1. User clicks "Save Image"
 2. Save dialog opens
-3. `ImageSaveService` writes TIFF file
+3. `ImageSaveService` writes PNG file
 4. Success message shown
 
 ---

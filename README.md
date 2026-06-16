@@ -27,7 +27,7 @@ A Windows desktop application for processing 16-bit grayscale TIFF medical and s
 - Metadata display
 - Progress & cancellation
 - Reset function
-- Save as TIFF
+- Save as png
 
 
 ## Architecture
