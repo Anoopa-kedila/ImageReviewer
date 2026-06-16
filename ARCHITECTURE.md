@@ -84,147 +84,98 @@ ImageReviewerApp/
 
 ## Class Diagrams
 
-### Main Data Classes
+### Main Classes
 
 ```mermaid
 classDiagram
     class ImageData {
-        +ushort[] PixelData
-        +int Width
-        +int Height
-        +int BitDepth
-        +Clone() ImageData
+        +PixelData
+        +Width
+        +Height
     }
 
     class ImageMetadata {
-        +string FileName
-        +int Width
-        +int Height
-        +ushort Min
-        +ushort Max
-        +double Mean
+        +FileName
+        +Width, Height
+        +Min, Max, Mean
     }
 
-    class ImageStatistics {
-        +ushort Min
-        +ushort Max
-        +double Mean
-        +Calculate(ImageData) ImageStatistics
-    }
-
-    ImageMetadata --> ImageStatistics
+    ImageData --> ImageMetadata
 ```
 
-### ViewModel Classes
+### ViewModels
 
 ```mermaid
 classDiagram
     class MainViewModel {
-        +BitmapSource OriginalImage
-        +BitmapSource ProcessedImage
-        +List~string~ Operations
-        +string SelectedOperation
-        +bool IsProcessing
-        +LoadImageCommand
-        +ApplyOperationCommand
-        +SaveImageCommand
-        +ResetCommand
+        +OriginalImage
+        +ProcessedImage
+        +LoadCommand
+        +ApplyCommand
+        +SaveCommand
     }
 
-    class WindowLevelParametersViewModel {
-        +double Window
-        +double Level
+    class ParameterViewModel {
         +GetParameters()
     }
 
-    class GammaParametersViewModel {
-        +double Gamma
-        +GetParameters()
-    }
-
-    MainViewModel --> WindowLevelParametersViewModel
-    MainViewModel --> GammaParametersViewModel
+    MainViewModel --> ParameterViewModel
 ```
 
-### Operation Classes
+### Operations
 
 ```mermaid
 classDiagram
     class IImageOperation {
         <<interface>>
-        +string Name
-        +Execute(ImageData, IProgress, CancellationToken) ImageData
+        +Execute()
     }
 
-    class WindowLevelOperation {
-        +Execute() ImageData
-    }
+    class WindowLevel
+    class Gamma
+    class Gaussian
 
-    class GammaCorrectionOperation {
-        +Execute() ImageData
-    }
-
-    class GaussianFilterOperation {
-        +Execute() ImageData
-    }
-
-    IImageOperation <|.. WindowLevelOperation
-    IImageOperation <|.. GammaCorrectionOperation
-    IImageOperation <|.. GaussianFilterOperation
+    IImageOperation <|-- WindowLevel
+    IImageOperation <|-- Gamma
+    IImageOperation <|-- Gaussian
 ```
 
 ---
 
 ## Sequence Diagrams
 
-### Loading an Image
+### Load Image
 
 ```mermaid
 sequenceDiagram
-    User->>MainWindow: Click "Load Image"
-    MainWindow->>MainViewModel: LoadImageCommand
-    MainViewModel->>DialogService: Show file dialog
-    DialogService-->>MainViewModel: Selected file path
-    MainViewModel->>ImageLoaderService: Load TIFF
-    ImageLoaderService-->>MainViewModel: ImageData
-    MainViewModel->>MainViewModel: Calculate statistics
-    MainViewModel-->>MainWindow: Update display
-    MainWindow-->>User: Show image
+    User->>UI: Click Load
+    UI->>ViewModel: LoadCommand
+    ViewModel->>Service: Load file
+    Service-->>ViewModel: ImageData
+    ViewModel-->>UI: Display
 ```
 
-### Applying an Operation
+### Apply Operation
 
 ```mermaid
 sequenceDiagram
-    User->>MainWindow: Select operation
-    MainWindow->>MainViewModel: Update selection
-    MainViewModel-->>MainWindow: Show parameters
-    User->>MainWindow: Adjust parameters
-    User->>MainWindow: Click "Apply"
-    MainWindow->>MainViewModel: ApplyCommand
-    MainViewModel->>Factory: Create operation
-    Factory-->>MainViewModel: Operation instance
-    MainViewModel->>Operation: Execute (async)
-    loop Processing
-        Operation-->>MainViewModel: Progress update
-        MainViewModel-->>MainWindow: Update progress bar
-    end
-    Operation-->>MainViewModel: Processed image
-    MainViewModel-->>MainWindow: Display result
+    User->>UI: Select operation
+    UI->>ViewModel: Update
+    User->>UI: Click Apply
+    ViewModel->>Operation: Execute
+    Operation-->>ViewModel: Result
+    ViewModel-->>UI: Show result
 ```
 
-### Saving an Image
+### Save Image
 
 ```mermaid
 sequenceDiagram
-    User->>MainWindow: Click "Save Image"
-    MainWindow->>MainViewModel: SaveImageCommand
-    MainViewModel->>DialogService: Show save dialog
-    DialogService-->>MainViewModel: File path
-    MainViewModel->>ImageSaveService: Save as TIFF
-    ImageSaveService-->>MainViewModel: Success
-    MainViewModel-->>MainWindow: Show message
-    MainWindow-->>User: "Image saved"
+    User->>UI: Click Save
+    UI->>ViewModel: SaveCommand
+    ViewModel->>Service: Save file
+    Service-->>ViewModel: Done
+    ViewModel-->>UI: Success
 ```
 
 ---
@@ -307,62 +258,33 @@ This makes it easy to add new operations without changing existing code.
 
 ## Component Diagram
 
-### How Components Connect
-
 ```mermaid
-graph TB
-    subgraph "Presentation"
-        UI[MainWindow XAML]
-        VM[MainViewModel]
-    end
-
-    subgraph "Services"
-        Loader[ImageLoaderService]
-        Saver[ImageSaveService]
-        Factory[OperationFactory]
-    end
-
-    subgraph "Operations"
-        WL[WindowLevel]
-        Gamma[Gamma]
-        Gauss[Gaussian]
-    end
-
-    UI --> VM
-    VM --> Loader
-    VM --> Saver
-    VM --> Factory
-    Factory --> WL
-    Factory --> Gamma
-    Factory --> Gauss
+graph LR
+    UI[UI] --> VM[ViewModel]
+    VM --> Loader[Image Loader]
+    VM --> Saver[Image Saver]
+    VM --> Ops[Operations]
 
     style UI fill:#e3f2fd
     style VM fill:#fff9c4
-    style Factory fill:#ffe0b2
-    style WL fill:#c8e6c9
+    style Ops fill:#c8e6c9
 ```
 
 ---
 
 ## Data Flow
 
-### Image Processing Pipeline
-
 ```mermaid
 flowchart LR
-    Load[Load TIFF] --> Convert[Convert to ImageData]
-    Convert --> Stats[Calculate Stats]
-    Stats --> Display[Display Original]
-    Display --> Select[Select Operation]
-    Select --> Process[Process Image]
-    Process --> Show[Show Result]
-    Show --> Save{Save?}
-    Save -->|Yes| Export[Export TIFF]
-    Save -->|No| Done[Done]
+    A[Load] --> B[Process]
+    B --> C[Display]
+    C --> D{Save?}
+    D -->|Yes| E[Export]
+    D -->|No| F[Done]
 
-    style Load fill:#e3f2fd
-    style Process fill:#fff9c4
-    style Export fill:#c8e6c9
+    style A fill:#e3f2fd
+    style B fill:#fff9c4
+    style E fill:#c8e6c9
 ```
 
 ---
