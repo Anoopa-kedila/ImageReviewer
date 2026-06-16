@@ -4,8 +4,10 @@
 
 1. [System Overview](#system-overview)
 2. [Application Structure](#application-structure)
-3. [Key Components](#key-components)
-4. [How It Works](#how-it-works)
+3. [Class Diagrams](#class-diagrams)
+4. [Sequence Diagrams](#sequence-diagrams)
+5. [Key Components](#key-components)
+6. [How It Works](#how-it-works)
 
 ---
 
@@ -77,6 +79,153 @@ ImageReviewerApp/
 - `MedianFilterOperation`
 - `ThresholdingOperation`
 - `BadPixelSuppressionOperation`
+
+---
+
+## Class Diagrams
+
+### Main Data Classes
+
+```mermaid
+classDiagram
+    class ImageData {
+        +ushort[] PixelData
+        +int Width
+        +int Height
+        +int BitDepth
+        +Clone() ImageData
+    }
+
+    class ImageMetadata {
+        +string FileName
+        +int Width
+        +int Height
+        +ushort Min
+        +ushort Max
+        +double Mean
+    }
+
+    class ImageStatistics {
+        +ushort Min
+        +ushort Max
+        +double Mean
+        +Calculate(ImageData) ImageStatistics
+    }
+
+    ImageMetadata --> ImageStatistics
+```
+
+### ViewModel Classes
+
+```mermaid
+classDiagram
+    class MainViewModel {
+        +BitmapSource OriginalImage
+        +BitmapSource ProcessedImage
+        +List~string~ Operations
+        +string SelectedOperation
+        +bool IsProcessing
+        +LoadImageCommand
+        +ApplyOperationCommand
+        +SaveImageCommand
+        +ResetCommand
+    }
+
+    class WindowLevelParametersViewModel {
+        +double Window
+        +double Level
+        +GetParameters()
+    }
+
+    class GammaParametersViewModel {
+        +double Gamma
+        +GetParameters()
+    }
+
+    MainViewModel --> WindowLevelParametersViewModel
+    MainViewModel --> GammaParametersViewModel
+```
+
+### Operation Classes
+
+```mermaid
+classDiagram
+    class IImageOperation {
+        <<interface>>
+        +string Name
+        +Execute(ImageData, IProgress, CancellationToken) ImageData
+    }
+
+    class WindowLevelOperation {
+        +Execute() ImageData
+    }
+
+    class GammaCorrectionOperation {
+        +Execute() ImageData
+    }
+
+    class GaussianFilterOperation {
+        +Execute() ImageData
+    }
+
+    IImageOperation <|.. WindowLevelOperation
+    IImageOperation <|.. GammaCorrectionOperation
+    IImageOperation <|.. GaussianFilterOperation
+```
+
+---
+
+## Sequence Diagrams
+
+### Loading an Image
+
+```mermaid
+sequenceDiagram
+    User->>MainWindow: Click "Load Image"
+    MainWindow->>MainViewModel: LoadImageCommand
+    MainViewModel->>DialogService: Show file dialog
+    DialogService-->>MainViewModel: Selected file path
+    MainViewModel->>ImageLoaderService: Load TIFF
+    ImageLoaderService-->>MainViewModel: ImageData
+    MainViewModel->>MainViewModel: Calculate statistics
+    MainViewModel-->>MainWindow: Update display
+    MainWindow-->>User: Show image
+```
+
+### Applying an Operation
+
+```mermaid
+sequenceDiagram
+    User->>MainWindow: Select operation
+    MainWindow->>MainViewModel: Update selection
+    MainViewModel-->>MainWindow: Show parameters
+    User->>MainWindow: Adjust parameters
+    User->>MainWindow: Click "Apply"
+    MainWindow->>MainViewModel: ApplyCommand
+    MainViewModel->>Factory: Create operation
+    Factory-->>MainViewModel: Operation instance
+    MainViewModel->>Operation: Execute (async)
+    loop Processing
+        Operation-->>MainViewModel: Progress update
+        MainViewModel-->>MainWindow: Update progress bar
+    end
+    Operation-->>MainViewModel: Processed image
+    MainViewModel-->>MainWindow: Display result
+```
+
+### Saving an Image
+
+```mermaid
+sequenceDiagram
+    User->>MainWindow: Click "Save Image"
+    MainWindow->>MainViewModel: SaveImageCommand
+    MainViewModel->>DialogService: Show save dialog
+    DialogService-->>MainViewModel: File path
+    MainViewModel->>ImageSaveService: Save as TIFF
+    ImageSaveService-->>MainViewModel: Success
+    MainViewModel-->>MainWindow: Show message
+    MainWindow-->>User: "Image saved"
+```
 
 ---
 
@@ -156,6 +305,68 @@ This makes it easy to add new operations without changing existing code.
 
 ---
 
+## Component Diagram
+
+### How Components Connect
+
+```mermaid
+graph TB
+    subgraph "Presentation"
+        UI[MainWindow XAML]
+        VM[MainViewModel]
+    end
+
+    subgraph "Services"
+        Loader[ImageLoaderService]
+        Saver[ImageSaveService]
+        Factory[OperationFactory]
+    end
+
+    subgraph "Operations"
+        WL[WindowLevel]
+        Gamma[Gamma]
+        Gauss[Gaussian]
+    end
+
+    UI --> VM
+    VM --> Loader
+    VM --> Saver
+    VM --> Factory
+    Factory --> WL
+    Factory --> Gamma
+    Factory --> Gauss
+
+    style UI fill:#e3f2fd
+    style VM fill:#fff9c4
+    style Factory fill:#ffe0b2
+    style WL fill:#c8e6c9
+```
+
+---
+
+## Data Flow
+
+### Image Processing Pipeline
+
+```mermaid
+flowchart LR
+    Load[Load TIFF] --> Convert[Convert to ImageData]
+    Convert --> Stats[Calculate Stats]
+    Stats --> Display[Display Original]
+    Display --> Select[Select Operation]
+    Select --> Process[Process Image]
+    Process --> Show[Show Result]
+    Show --> Save{Save?}
+    Save -->|Yes| Export[Export TIFF]
+    Save -->|No| Done[Done]
+
+    style Load fill:#e3f2fd
+    style Process fill:#fff9c4
+    style Export fill:#c8e6c9
+```
+
+---
+
 ## Design Decisions
 
 ### Why MVVM?
@@ -191,21 +402,6 @@ Simple steps to extend the application:
 5. Add UI template for parameters
 6. Write tests
 
-Example:
-```csharp
-public class MyNewOperation : IImageOperation
-{
-    public string Name => "My Operation";
-
-    public ImageData Execute(ImageData image, IProgress<double> progress, CancellationToken ct)
-    {
-        // Your processing code here
-        return processedImage;
-    }
-}
-```
-
----
 
 ## Performance Approach
 
